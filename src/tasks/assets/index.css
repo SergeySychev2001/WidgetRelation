@@ -5,14 +5,20 @@
     flex: 1;
 }
 
-.container.container_v {
+.container_v {
+    border: 1px solid black;
+    padding: 2px;
+
     display: flex;
     flex-direction: column;
     gap: 2px;
     flex: 1;
 }
 
-.container.container_h {
+.container_h {
+    border: 1px solid black;
+    padding: 2px;
+    
     display: flex;
     flex-direction: row;
     gap: 2px;

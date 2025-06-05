@@ -1,5 +1,5 @@
-import { HBoxContainer, VBoxContainer, Widget } from "../classes";
-import { Align } from "../enums";
+import { HBoxContainer, VBoxContainer, Widget, LayoutManager } from "../classes";
+import { Align, ContainerOrientation } from "../enums";
 
 const initWidgetsFunc = {
     classic: () => {
@@ -68,4 +68,17 @@ const initWidgetsFunc = {
     }
 }
 
-export { initWidgetsFunc }
+const updateLayoutByWidget = (widget: Widget) => {
+    const layoutManager = new LayoutManager();
+    layoutManager.createWidgetRelationsByWidget(widget)
+    console.log(layoutManager.getWidgetRelations())
+}
+
+const updateLayoutByWidgets = (widgets: Widget[], orientation: ContainerOrientation) => {
+    const layoutManager = new LayoutManager();
+    layoutManager.createWidgetRelationsByWidgets(widgets, orientation)
+    console.log(layoutManager.getWidgetRelations())
+}
+
+export { initWidgetsFunc, updateLayoutByWidget, updateLayoutByWidgets }
+export * from './helpers';

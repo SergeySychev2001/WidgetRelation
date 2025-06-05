@@ -5,10 +5,12 @@ export default class Widget {
   private static INDEX: number = 0;
   private align: Align;
   private displayable: boolean;
+  private index: number;
 
   constructor(align: Align = Align.alClient, displayable: boolean = true) {
     this.align = align;
     this.displayable = displayable;
+    this.index = ++Widget.INDEX;
   }
 
   public isDisplayable(): boolean {
@@ -23,6 +25,10 @@ export default class Widget {
     this.align = align;
   }
 
+  public getIndex() {
+    return this.index;
+  }
+
   public createDOM = (): HTMLDivElement => {
     const el = document.createElement("div");
     el.classList.add(CssClasses.WIDGET);
@@ -30,7 +36,7 @@ export default class Widget {
     if (!this.displayable) {
       el.classList.add(CssClasses.DISABLED);
     }
-    el.innerText = `id: ${++Widget.INDEX}; al: ${this.getAlign()}`;
+    el.innerText = `id: ${this.getIndex()}; al: ${this.getAlign()}`;
     return el;
   };
 }

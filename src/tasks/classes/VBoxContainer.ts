@@ -1,11 +1,34 @@
 import { Align } from "../enums";
 import CssClasses from "../enums/CssClasses";
 import ContainerWidget from "./ContainerWidget";
+import Widget from "./Widget";
 
 export default class VBoxContainer extends ContainerWidget {
+  public sortChildren = (): Widget[] => {
+    const topChildren: Widget[] = [];
+    const centerChildren: Widget[] = [];
+    const bottomChildren: Widget[] = [];
+
+    for (let i = 0; i < this.getChildren().length; i++) {
+      switch (this.getChildren()[i].getAlign()) {
+        case Align.alTop:
+          topChildren.push(this.getChildren()[i]);
+          break;
+        case Align.alClient:
+          centerChildren.push(this.getChildren()[i]);
+          break;
+        case Align.alBottom:
+          bottomChildren.push(this.getChildren()[i]);
+          break;
+        default: throw new Error("Unexpected case");
+      }
+    }
+
+    return [...topChildren.reverse(), ...centerChildren, ...bottomChildren];
+  }
+
   public createDOM = (): HTMLDivElement => {
     const el = document.createElement("div");
-    el.classList.add(CssClasses.CONTAINER);
     el.classList.add(CssClasses.CONTAINER_V);
     el.classList.add(this.getAlign());
 

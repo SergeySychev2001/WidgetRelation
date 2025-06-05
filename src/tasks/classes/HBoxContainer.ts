@@ -1,11 +1,34 @@
 import { Align } from "../enums";
 import CssClasses from "../enums/CssClasses";
 import ContainerWidget from "./ContainerWidget";
+import Widget from "./Widget";
 
 export default class HBoxContainer extends ContainerWidget {
+  public sortChildren = (): Widget[] => {
+    const leftChildren: Widget[] = [];
+    const centerChildren: Widget[] = [];
+    const rightChildren: Widget[] = [];
+
+    for (let i = 0; i < this.getChildren().length; i++) {
+      switch (this.getChildren()[i].getAlign()) {
+        case Align.alLeft:
+          leftChildren.push(this.getChildren()[i]);
+          break;
+        case Align.alClient:
+          centerChildren.push(this.getChildren()[i]);
+          break;
+        case Align.alRight:
+          rightChildren.push(this.getChildren()[i]);
+          break;
+        default: throw new Error("Unexpected case");
+      }
+    }
+
+    return [...leftChildren.reverse(), ...centerChildren, ...rightChildren];
+  }
+
   public createDOM = (): HTMLDivElement => {
     const el = document.createElement("div");
-    el.classList.add(CssClasses.CONTAINER);
     el.classList.add(CssClasses.CONTAINER_H);
     el.classList.add(this.getAlign());
 
