@@ -1,0 +1,102 @@
+.frame {
+    border: 1px dashed rgb(38, 0, 255);
+    padding: 2px;
+    flex: 1;
+}
+
+.frame_v {
+    border: 1px dashed rgb(38, 0, 255);
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.frame_h {
+    border: 1px dashed rgb(38, 0, 255);
+    padding: 2px;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    flex: 1;
+}
+
+/* Container */
+.container {
+    border: 1px solid black;
+    padding: 2px;
+    flex: 1;
+}
+
+.container_v {
+    border: 1px solid black;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.container_h {
+    border: 1px solid black;
+    padding: 2px;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    flex: 1;
+}
+
+/* Container border */
+.container-border {
+    border-width: 0;
+    border-style: solid;
+    border-color: blue;
+}
+
+.container-border.container-border-top {
+    border-top-width: 1px;
+}
+
+.container-border.container-border-right {
+    border-right-width: 1px;
+}
+
+.container-border.container-border-bottom {
+    border-bottom-width: 1px;
+}
+
+.container-border.container-border-left {
+    border-left-width: 1px;
+}
+
+/* Widget */
+.widget {
+    border: 1px solid red;
+    padding: 2px;
+    min-width: 20px;
+    min-height: 20px;
+    flex: 1;
+}
+
+.widget.toolbar {
+    background: rgb(157, 157, 255);
+}
+
+.widget.header {
+    background: rgb(255, 157, 157);
+}
+
+.widget.active {
+    background: rgb(255, 254, 177);
+}
+
+.widget.subactive {
+    background: rgb(177, 255, 183);
+}
+
+/* Common */
+.disabled {
+    background: rgba(141, 141, 141, 0.131);
+}
+
