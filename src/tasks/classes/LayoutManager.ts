@@ -6,173 +6,193 @@ import HBoxContainer from "./HBoxContainer";
 import VBoxContainer from "./VBoxContainer";
 import { getOrCreate } from "../utils";
 
+/**
+ * Builds relations between widgets so that each widget knows
+ * its neighbors in all four directions.
+ */
 export default class LayoutManager {
-    private widgetRelations: Map<Widget, WidgetRelations> = new Map();
+  private widgetRelations: Map<Widget, WidgetRelations> = new Map();
 
-    public getWidgetRelations() {
-        return this.widgetRelations;
+  public getWidgetRelations(): Map<Widget, WidgetRelations> {
+    return this.widgetRelations;
+  }
+
+  private getOrientation(container: ContainerWidget): ContainerOrientation {
+    if (container instanceof BoxContainer) {
+      return ContainerOrientation.center;
+    }
+    if (container instanceof HBoxContainer) {
+      return ContainerOrientation.horizontal;
+    }
+    if (container instanceof VBoxContainer) {
+      return ContainerOrientation.vertical;
+    }
+    throw new Error("Unexpected case");
+  }
+
+  public createWidgetRelationsByWidget(widget: Widget): void {
+    if (widget instanceof ContainerWidget) {
+      const orientation = this.getOrientation(widget);
+      const children = widget.getChildren();
+
+      if (orientation === ContainerOrientation.center) {
+        if (children.length) {
+          this.widgetRelations.set(children[0], new WidgetRelations());
+        }
+        return;
+      }
+
+      const sortedChildren = ContainerWidget.sortWidgetsByOrientation(
+        children,
+        orientation,
+      );
+
+      sortedChildren.forEach((child, idx) => {
+        this.createWidgetRelationsByWidget(child);
+        if (idx > 0) {
+          this.createRelationsBetweenNeighbours(
+            sortedChildren[idx - 1],
+            child,
+            orientation,
+          );
+        }
+      });
+    } else {
+      this.widgetRelations.set(widget, new WidgetRelations());
+    }
+  }
+
+  public createWidgetRelationsByWidgets(
+    widgets: Widget[],
+    orientation: ContainerOrientation,
+  ): void {
+    switch (orientation) {
+      case ContainerOrientation.center:
+        if (widgets.length) {
+          this.widgetRelations.set(widgets[0], new WidgetRelations());
+        }
+        break;
+      case ContainerOrientation.horizontal:
+      case ContainerOrientation.vertical: {
+        const sortedChildren = ContainerWidget.sortWidgetsByOrientation(
+          widgets,
+          orientation,
+        );
+        sortedChildren.forEach((child, idx) => {
+          this.createWidgetRelationsByWidget(child);
+          if (idx > 0) {
+            this.createRelationsBetweenNeighbours(
+              sortedChildren[idx - 1],
+              child,
+              orientation,
+            );
+          }
+        });
+        break;
+      }
+      default:
+        throw new Error("Enxpected case");
+    }
+  }
+
+  private findEdgesWidgets(widget: Widget, align: Align): Widget[] {
+    if (!(widget instanceof ContainerWidget)) {
+      return [widget];
     }
 
-    private widgetIsSimpleContainer(containerWidget: ContainerWidget): boolean {
-        return containerWidget instanceof BoxContainer;
+    if (widget instanceof BoxContainer) {
+      return widget.getChildren().length
+        ? this.findEdgesWidgets(widget.getChildren()[0], align)
+        : [];
     }
 
-    private widgetIsHorizontalContainer(containerWidget: ContainerWidget): boolean {
-        return containerWidget instanceof HBoxContainer;
+    const children = widget.getChildren();
+    const [start, end] =
+      align === Align.alTop || align === Align.alBottom
+        ? [Align.alLeft, Align.alRight]
+        : [Align.alTop, Align.alBottom];
+
+    const aligned = children.filter(c => c.getAlign() === align);
+    const center = children.filter(c => c.getAlign() === Align.alClient);
+    const startSide = children.filter(c => c.getAlign() === start);
+    const endSide = children.filter(c => c.getAlign() === end);
+
+    const fromStart = startSide.reduce<Widget[]>(
+      (acc, c) => acc.concat(this.findEdgesWidgets(c, align)),
+      [],
+    );
+    const midSource = aligned.length > 0 ? aligned : center;
+    const middle = midSource.reduce<Widget[]>(
+      (acc, c) => acc.concat(this.findEdgesWidgets(c, align)),
+      [],
+    );
+    const fromEnd = endSide.reduce<Widget[]>(
+      (acc, c) => acc.concat(this.findEdgesWidgets(c, align)),
+      [],
+    );
+    return [...fromStart, ...middle, ...fromEnd];
+  }
+
+  private createRelationsBetweenNeighbours(
+    widget: Widget,
+    nextWidget: Widget,
+    orientation: ContainerOrientation,
+  ): void {
+    if (orientation === ContainerOrientation.center) {
+      throw new Error("Enxpected case");
     }
 
-    private widgetIsVerticalContainer(containerWidget: ContainerWidget): boolean {
-        return containerWidget instanceof VBoxContainer;
-    }
+    const topOrLeftNeighbours = this.findEdgesWidgets(
+      widget,
+      orientation === ContainerOrientation.vertical ? Align.alBottom : Align.alRight,
+    );
+    const bottomOrRightNeighbours = this.findEdgesWidgets(
+      nextWidget,
+      orientation === ContainerOrientation.vertical ? Align.alTop : Align.alLeft,
+    );
 
-    public createWidgetRelationsByWidget(widget: Widget) {
-        if (widget instanceof ContainerWidget) {
-            if (this.widgetIsSimpleContainer(widget)) {
-                if (widget.getChildren().length) this.widgetRelations.set(widget.getChildren()[0], new WidgetRelations());
-            } else if (this.widgetIsHorizontalContainer(widget)) {
-                const hBoxContainer: HBoxContainer = widget as HBoxContainer;
-                const sortedChildren = hBoxContainer.sortChildren();
-                for (let i = 0; i < sortedChildren.length; i++) {
-                    this.createWidgetRelationsByWidget(sortedChildren[i]);
-                    if (i > 0) {
-                        this.createRelationsBetweenNeighbours(sortedChildren[i - 1], sortedChildren[i], ContainerOrientation.horizontal);
-                    }
-                }
-            } else if (this.widgetIsVerticalContainer(widget)) {
-                const vBoxContainer: VBoxContainer = widget as VBoxContainer;
-                const sortedChildren = vBoxContainer.sortChildren();
-                for (let i = 0; i < sortedChildren.length; i++) {
-                    this.createWidgetRelationsByWidget(sortedChildren[i]);
-                    if (i > 0) this.createRelationsBetweenNeighbours(sortedChildren[i - 1], sortedChildren[i], ContainerOrientation.vertical);
-                }
-            } else {
-                throw new Error("Enxpected case");
-            }
+    topOrLeftNeighbours.forEach(left => {
+      bottomOrRightNeighbours.forEach(right => {
+        if (orientation === ContainerOrientation.vertical) {
+          getOrCreate(this.widgetRelations, left, () => new WidgetRelations())
+            .getBottomRelations()
+            .push(right);
+          getOrCreate(this.widgetRelations, right, () => new WidgetRelations())
+            .getTopRelations()
+            .push(left);
         } else {
-            this.widgetRelations.set(widget, new WidgetRelations());
+          getOrCreate(this.widgetRelations, left, () => new WidgetRelations())
+            .getRightRelations()
+            .push(right);
+          getOrCreate(this.widgetRelations, right, () => new WidgetRelations())
+            .getLeftRelations()
+            .push(left);
         }
-    }
-
-    public createWidgetRelationsByWidgets(widgets: Widget[], orientation: ContainerOrientation) {
-        switch (orientation) {
-            case ContainerOrientation.center:
-                if (widgets.length) this.widgetRelations.set(widgets[0], new WidgetRelations());
-                break;
-            case ContainerOrientation.horizontal:
-            case ContainerOrientation.vertical:
-                const sortedChildren = ContainerWidget.sortWidgetsByOrientation(widgets, orientation);
-                for (let i = 0; i < sortedChildren.length; i++) {
-                    this.createWidgetRelationsByWidget(sortedChildren[i]);
-                    if (i > 0) {
-                        this.createRelationsBetweenNeighbours(sortedChildren[i - 1], sortedChildren[i], orientation);
-                    }
-                }
-                break;
-            default: throw new Error("Enxpected case");
-        }
-    }
-
-    private findEdgesWidgets(widget: Widget, align: Align): Widget[] {
-        const widgets: Widget[] = [];
-        if (widget instanceof ContainerWidget) {
-            if (this.widgetIsSimpleContainer(widget)) {
-                if (widget.getChildren().length > 0) widgets.push(widget.getChildren()[0]);
-            } else {
-                switch (align) {
-                    case Align.alTop:
-                        widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alLeft).flatMap(i => this.findEdgesWidgets(i, align)));
-                        if (widget.getChildren().findIndex(i => i.getAlign() === Align.alTop) > -1) {
-                            widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alTop).flatMap(i => this.findEdgesWidgets(i, align)));
-                        } else {
-                            widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alClient).flatMap(i => this.findEdgesWidgets(i, align)));
-                        }
-                        widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alRight).flatMap(i => this.findEdgesWidgets(i, align)));
-                        break;
-                    case Align.alRight:
-                        widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alTop).flatMap(i => this.findEdgesWidgets(i, align)));
-                        if (widget.getChildren().findIndex(i => i.getAlign() === Align.alRight) > -1) {
-                            widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alRight).flatMap(i => this.findEdgesWidgets(i, align)));
-                        } else {
-                            widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alClient).flatMap(i => this.findEdgesWidgets(i, align)));
-                        }
-                        widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alBottom).flatMap(i => this.findEdgesWidgets(i, align)));
-                        break;
-                    case Align.alBottom:
-                        widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alLeft).flatMap(i => this.findEdgesWidgets(i, align)));
-                        if (widget.getChildren().findIndex(i => i.getAlign() === Align.alBottom) > -1) {
-                            widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alBottom).flatMap(i => this.findEdgesWidgets(i, align)));
-                        } else {
-                            widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alClient).flatMap(i => this.findEdgesWidgets(i, align)));
-                        }
-                        widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alRight).flatMap(i => this.findEdgesWidgets(i, align)));
-                        break;
-                    case Align.alLeft:
-                        widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alTop).flatMap(i => this.findEdgesWidgets(i, align)));
-                        if (widget.getChildren().findIndex(i => i.getAlign() === Align.alLeft) > -1) {
-                            widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alLeft).flatMap(i => this.findEdgesWidgets(i, align)));
-                        } else {
-                            widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alClient).flatMap(i => this.findEdgesWidgets(i, align)));
-                        }
-                        widgets.push(...widget.getChildren().filter(i => i.getAlign() === Align.alBottom).flatMap(i => this.findEdgesWidgets(i, align)));
-                        break;
-                    default: throw new Error("Enxpected case");
-                }
-            }
-        } else {
-            widgets.push(widget);
-        }
-        return widgets;
-    }
-
-    private createRelationsBetweenNeighbours(widget: Widget, nextWidget: Widget, orientation: ContainerOrientation) {
-        if (orientation === ContainerOrientation.center) throw new Error("Enxpected case");
-        const topOrLeftNeghbours = this.findEdgesWidgets(widget, orientation === ContainerOrientation.vertical ? Align.alBottom : Align.alRight);
-        const bottomOrRightNeghbours = this.findEdgesWidgets(nextWidget, orientation === ContainerOrientation.vertical ? Align.alTop : Align.alLeft);
-        for (let i = 0; i < topOrLeftNeghbours.length; i++) {
-            for (let j = 0; j < bottomOrRightNeghbours.length; j++) {
-                if (orientation === ContainerOrientation.vertical) {
-                    getOrCreate(this.widgetRelations, topOrLeftNeghbours[i], () => new WidgetRelations()).getBottomRelations().push(bottomOrRightNeghbours[j]);
-                    getOrCreate(this.widgetRelations, bottomOrRightNeghbours[j], () => new WidgetRelations()).getTopRelations().push(topOrLeftNeghbours[i]);
-                } else {
-                    getOrCreate(this.widgetRelations, topOrLeftNeghbours[i], () => new WidgetRelations()).getRightRelations().push(bottomOrRightNeghbours[j]);
-                    getOrCreate(this.widgetRelations, bottomOrRightNeghbours[j], () => new WidgetRelations()).getLeftRelations().push(topOrLeftNeghbours[i]);
-                }
-            }
-        }
-
-    }
-
-    // private clear() {
-    //     this.widgetRelations = new Map();
-    // }
+      });
+    });
+  }
 }
 
+/** Stores relations to neighbouring widgets. */
 class WidgetRelations {
-    private topRelations: Widget[];
-    private rightRelations: Widget[];
-    private bottomRelations: Widget[];
-    private leftRelations: Widget[];
+  private topRelations: Widget[] = [];
+  private rightRelations: Widget[] = [];
+  private bottomRelations: Widget[] = [];
+  private leftRelations: Widget[] = [];
 
-    constructor() {
-        this.topRelations = [];
-        this.rightRelations = [];
-        this.bottomRelations = [];
-        this.leftRelations = [];
-    }
+  public getTopRelations(): Widget[] {
+    return this.topRelations;
+  }
 
-    public getTopRelations() {
-        return this.topRelations;
-    }
+  public getRightRelations(): Widget[] {
+    return this.rightRelations;
+  }
 
-    public getRightRelations() {
-        return this.rightRelations;
-    }
+  public getBottomRelations(): Widget[] {
+    return this.bottomRelations;
+  }
 
-    public getBottomRelations() {
-        return this.bottomRelations;
-    }
-
-    public getLeftRelations() {
-        return this.leftRelations;
-    }
+  public getLeftRelations(): Widget[] {
+    return this.leftRelations;
+  }
 }

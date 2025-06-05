@@ -1,20 +1,15 @@
 import CssClasses from "../enums/CssClasses";
 import ContainerWidget from "./ContainerWidget";
+import { ContainerOrientation } from "../enums";
+import Widget from "./Widget";
 
+/** Single child container without orientation. */
 export default class BoxContainer extends ContainerWidget {
-    public sortChildren = () => {
-        return this.getChildren();
-    }
-    public createDOM = (): HTMLDivElement => {
-        const el = document.createElement("div");
-        el.classList.add(CssClasses.CONTAINER);
-        el.classList.add(this.getAlign());
+  public sortChildren = (): Widget[] => this.getChildren();
 
-        for (const child of this.getChildren()) {
-            if (el.firstChild) throw new Error("More 1 element");
-            el.appendChild(child.createDOM());
-        }
-
-        return el;
-    };
+  public createDOM = (): HTMLDivElement =>
+    this.createDOMByOrientation(
+      ContainerOrientation.center,
+      CssClasses.CONTAINER,
+    );
 }

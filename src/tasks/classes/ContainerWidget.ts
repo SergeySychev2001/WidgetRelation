@@ -1,71 +1,112 @@
 import { Align, ContainerOrientation } from "../enums";
 import Widget from "./Widget";
 
+/**
+ * Base class for widgets that may contain child widgets.
+ * Provides helpers for orientation-based processing.
+ */
 export default abstract class ContainerWidget extends Widget {
-  private children: Widget[];
-
   constructor(
     align: Align = Align.alClient,
     displayable: boolean = true,
-    children: Widget[] = [],
+    protected children: Widget[] = [],
   ) {
     super(align, displayable);
-    this.children = children;
   }
 
-  public getChildren() {
+  /** Returns direct children of this container. */
+  public getChildren(): Widget[] {
     return this.children;
   }
 
-  public abstract sortChildren(): void;
+  /** Sort children according to container-specific rules. */
+  public abstract sortChildren(): Widget[];
 
-  public static sortWidgetsByOrientation(widgets: Widget[], orientation: ContainerOrientation) {
-    if (orientation === ContainerOrientation.vertical) {
-      const topChildren: Widget[] = [];
-      const centerChildren: Widget[] = [];
-      const bottomChildren: Widget[] = [];
+  /**
+   * Creates DOM element for this container according to its orientation.
+   */
+  protected createDOMByOrientation(
+    orientation: ContainerOrientation,
+    cssClass: string,
+  ): HTMLDivElement {
+    const element = document.createElement("div");
+    element.classList.add(cssClass, this.getAlign());
 
-      for (let i = 0; i < widgets.length; i++) {
-        switch (widgets[i].getAlign()) {
-          case Align.alTop:
-            topChildren.push(widgets[i]);
-            break;
-          case Align.alClient:
-            centerChildren.push(widgets[i]);
-            break;
-          case Align.alBottom:
-            bottomChildren.push(widgets[i]);
-            break;
-          default: throw new Error("Unexpected case");
+    if (orientation === ContainerOrientation.center) {
+      this.children.forEach(child => {
+        if (element.firstChild) {
+          throw new Error("More 1 element");
         }
-      }
-
-      return [...topChildren.reverse(), ...centerChildren, ...bottomChildren];
-    } else if (orientation === ContainerOrientation.horizontal) {
-      const leftChildren: Widget[] = [];
-      const centerChildren: Widget[] = [];
-      const rightChildren: Widget[] = [];
-
-      for (let i = 0; i < widgets.length; i++) {
-        switch (widgets[i].getAlign()) {
-          case Align.alLeft:
-            leftChildren.push(widgets[i]);
-            break;
-          case Align.alClient:
-            centerChildren.push(widgets[i]);
-            break;
-          case Align.alRight:
-            rightChildren.push(widgets[i]);
-            break;
-          default: throw new Error("Unexpected case");
-        }
-      }
-
-      return [...leftChildren.reverse(), ...centerChildren, ...rightChildren];
-    } else if (orientation === ContainerOrientation.center) {
-      return widgets;
-    } else {
-      throw new Error("Enxpected case");
+        element.appendChild(child.createDOM());
+      });
+      return element;
     }
+
+    const [start, end] =
+      orientation === ContainerOrientation.vertical
+        ? [Align.alTop, Align.alBottom]
+        : [Align.alLeft, Align.alRight];
+
+    for (const child of this.children) {
+      switch (child.getAlign()) {
+        case start:
+          if (element.firstChild) {
+            element.insertBefore(child.createDOM(), element.firstChild);
+          } else {
+            element.appendChild(child.createDOM());
+          }
+          break;
+        case Align.alClient: {
+          const firstEnd = Array.from(element.children).find(node =>
+            node.classList.contains(end),
+          );
+          if (firstEnd) {
+            element.insertBefore(child.createDOM(), firstEnd);
+          } else {
+            element.appendChild(child.createDOM());
+          }
+          break;
+        }
+        case end:
+          element.appendChild(child.createDOM());
+          break;
+        default:
+          throw new Error("Unexpected align");
+      }
+    }
+
+    return element;
+  }
+
+  /** Sort widgets by the given orientation. */
+  public static sortWidgetsByOrientation(
+    widgets: Widget[],
+    orientation: ContainerOrientation,
+  ): Widget[] {
+    if (orientation === ContainerOrientation.center) {
+      return widgets;
+    }
+
+    const order =
+      orientation === ContainerOrientation.vertical
+        ? [Align.alTop, Align.alClient, Align.alBottom]
+        : [Align.alLeft, Align.alClient, Align.alRight];
+
+    const buckets = new Map(order.map(a => [a, [] as Widget[]]));
+
+    widgets.forEach(w => {
+      const bucket = buckets.get(w.getAlign());
+      if (!bucket) {
+        throw new Error("Unexpected case");
+      }
+      bucket.push(w);
+    });
+
+    (buckets.get(order[0]) as Widget[]).reverse();
+
+    return order.reduce<Widget[]>((acc, a) => {
+      const arr = buckets.get(a) as Widget[];
+      return acc.concat(arr);
+    }, []);
   }
 }
