@@ -146,25 +146,27 @@ export default class LayoutManager {
       orientation === ContainerOrientation.vertical ? Align.alTop : Align.alLeft
     );
 
-    topOrLeftNeighbours.forEach((a) => {
-      bottomOrRightNeighbours.forEach((b) => {
-        if (orientation === ContainerOrientation.vertical) {
-          getOrCreate(this.widgetRelations, a, () => new WidgetRelations())
-            .getBottomRelations()
-            .push(b);
-          getOrCreate(this.widgetRelations, b, () => new WidgetRelations())
-            .getTopRelations()
-            .push(a);
-        } else {
-          getOrCreate(this.widgetRelations, a, () => new WidgetRelations())
-            .getRightRelations()
-            .push(b);
-          getOrCreate(this.widgetRelations, b, () => new WidgetRelations())
-            .getLeftRelations()
-            .push(a);
-        }
+    if (topOrLeftNeighbours.length && bottomOrRightNeighbours.length) {
+      topOrLeftNeighbours.forEach((a) => {
+        bottomOrRightNeighbours.forEach((b) => {
+          if (orientation === ContainerOrientation.vertical) {
+            getOrCreate(this.widgetRelations, a, () => new WidgetRelations())
+              .getBottomRelations()
+              .push(b);
+            getOrCreate(this.widgetRelations, b, () => new WidgetRelations())
+              .getTopRelations()
+              .push(a);
+          } else {
+            getOrCreate(this.widgetRelations, a, () => new WidgetRelations())
+              .getRightRelations()
+              .push(b);
+            getOrCreate(this.widgetRelations, b, () => new WidgetRelations())
+              .getLeftRelations()
+              .push(a);
+          }
+        });
       });
-    });
+    }
   }
 
   public clear() {

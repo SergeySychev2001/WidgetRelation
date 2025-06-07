@@ -44,30 +44,32 @@ export default abstract class ContainerWidget extends Widget {
         : [Align.alLeft, Align.alRight];
 
     for (const child of this.children) {
-      switch (child.getAlign()) {
-        case start:
-          if (element.firstChild) {
-            element.insertBefore(child.createDOM(), element.firstChild);
-          } else {
-            element.appendChild(child.createDOM());
+      if (child.isDisplayable()) {
+        switch (child.getAlign()) {
+          case start:
+            if (element.firstChild) {
+              element.insertBefore(child.createDOM(), element.firstChild);
+            } else {
+              element.appendChild(child.createDOM());
+            }
+            break;
+          case Align.alClient: {
+            const firstEnd = Array.from(element.children).find((node) =>
+              node.classList.contains(end)
+            );
+            if (firstEnd) {
+              element.insertBefore(child.createDOM(), firstEnd);
+            } else {
+              element.appendChild(child.createDOM());
+            }
+            break;
           }
-          break;
-        case Align.alClient: {
-          const firstEnd = Array.from(element.children).find((node) =>
-            node.classList.contains(end)
-          );
-          if (firstEnd) {
-            element.insertBefore(child.createDOM(), firstEnd);
-          } else {
+          case end:
             element.appendChild(child.createDOM());
-          }
-          break;
+            break;
+          default:
+            throw new Error("Unexpected align");
         }
-        case end:
-          element.appendChild(child.createDOM());
-          break;
-        default:
-          throw new Error("Unexpected align");
       }
     }
 
@@ -77,7 +79,7 @@ export default abstract class ContainerWidget extends Widget {
   /** Sort widgets by the given orientation. */
   public static sortWidgetsByOrientation(container: ContainerWidget): Widget[] {
     if (container.getOrientation() === ContainerOrientation.center) {
-      return container.getChildren();
+      return container.getChildren().filter(i => i.isDisplayable());
     }
 
     // Определяем порядок сортировки в зависимости от ориентации
@@ -98,7 +100,7 @@ export default abstract class ContainerWidget extends Widget {
       if (!(align in grouped)) {
         throw new Error(`Unexpected align: ${align}`);
       }
-      grouped[align].push(widget);
+      if (widget.isDisplayable()) grouped[align].push(widget);
     }
 
     // Переворачиваем первый бакет
