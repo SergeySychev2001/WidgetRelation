@@ -1,7 +1,7 @@
 import { ContainerWidget, HBoxContainer, VBoxContainer } from "../containers";
 import { Align, Orientation } from "../enums";
 import { Frame, VFrame } from "../frames";
-import { Widget } from "../widgets";
+import { Card, Header, ToolBar, Widget } from "../widgets";
 
 const initWidgetsFunc = {
   classic: () => {
@@ -11,17 +11,17 @@ const initWidgetsFunc = {
           new HBoxContainer(Align.alLeft, true, [
             new Widget(Align.alLeft, true),
             new Widget(Align.alLeft, true),
-            new Widget(Align.alLeft, true),
+            new ToolBar(Align.alLeft, true, Orientation.vertical),
           ]),
           new Widget(Align.alClient, true),
           new HBoxContainer(Align.alLeft, true, [
-            new Widget(Align.alRight, true),
+            new Card(Align.alRight, true),
             new Widget(Align.alRight, true),
             new Widget(Align.alRight, true),
           ]),
         ]),
         new VBoxContainer(Align.alClient, true, [
-          new Widget(Align.alTop, true),
+          new Header(Align.alTop, true),
           new HBoxContainer(Align.alBottom, true, [
             new VBoxContainer(Align.alLeft, true, [
               new HBoxContainer(Align.alTop, true, [

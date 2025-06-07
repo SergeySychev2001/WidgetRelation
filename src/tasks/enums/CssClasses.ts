@@ -14,6 +14,7 @@ enum CssClasses {
     CONTAINER_BORDER_LEFT = 'container-border-left',
 
     WIDGET = 'widget',
+    CARD = 'card',
     TOOLBAR = 'toolbar',
     HEADER = 'header',
     ACTIVE = 'active',

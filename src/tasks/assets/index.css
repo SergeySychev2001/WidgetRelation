@@ -24,26 +24,26 @@
 
 /* Container */
 .container {
-    border: 1px solid black;
-    padding: 2px;
+    /* border: 1px solid black;
+    padding: 2px; */
     flex: 1;
 }
 
 .container_v {
-    border: 1px solid black;
-    padding: 2px;
+    /* border: 1px solid black;
+    padding: 2px; */
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    /* gap: 2px; */
     flex: 1;
 }
 
 .container_h {
-    border: 1px solid black;
-    padding: 2px;
+    /* border: 1px solid black;
+    padding: 2px; */
     display: flex;
     flex-direction: row;
-    gap: 2px;
+    /* gap: 2px; */
     flex: 1;
 }
 
@@ -72,15 +72,19 @@
 
 /* Widget */
 .widget {
-    border: 1px solid red;
+    /* border: 1px solid red; */
     padding: 2px;
     min-width: 20px;
     min-height: 20px;
     flex: 1;
 }
 
+.widget.card {
+    background: rgb(201, 201, 255);
+}
+
 .widget.toolbar {
-    background: rgb(157, 157, 255);
+    background: rgb(220, 220, 255);
 }
 
 .widget.header {
