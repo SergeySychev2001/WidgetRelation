@@ -5,8 +5,8 @@ const renderWidgets = () => {
   const body = document.querySelector("body");
 
   const rootWidget = initWidgetsFunc.classic();
-  rootWidget.updateLayout();
-  console.log(rootWidget.getLayoutManager().getWidgetRelations());
+  rootWidget.getLayoutManager().updateLayout();
+  
   body?.appendChild(rootWidget.createDOM());
 };
 

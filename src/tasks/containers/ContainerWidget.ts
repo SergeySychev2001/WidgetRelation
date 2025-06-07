@@ -1,4 +1,4 @@
-import { Align, Orientation } from "../enums";
+import { Align, CssClasses, Orientation } from "../enums";
 import Widget from "../widgets/Widget";
 
 /**
@@ -6,17 +6,31 @@ import Widget from "../widgets/Widget";
  * Provides helpers for orientation-based processing.
  */
 export default abstract class ContainerWidget extends Widget {
+  private borders: Map<Align, boolean> = new Map();
+
   constructor(
     align: Align = Align.alClient,
     displayable: boolean = true,
     protected children: Widget[] = []
   ) {
     super(align, displayable);
+    this.initBorders();
   }
 
   /** Returns direct children of this container. */
   public getChildren(): Widget[] {
     return this.children;
+  }
+
+  public getBorders() {
+    return this.borders;
+  }
+
+  public initBorders() {
+    this.borders.set(Align.alTop, false);
+    this.borders.set(Align.alRight, false);
+    this.borders.set(Align.alBottom, false);
+    this.borders.set(Align.alLeft, false);
   }
 
   public abstract getOrientation(): Orientation;
@@ -27,6 +41,12 @@ export default abstract class ContainerWidget extends Widget {
   public createDOM(cssClass: string[] = []): HTMLDivElement {
     const element = document.createElement("div");
     element.classList.add(...cssClass, this.getAlign());
+
+    element.classList.add(CssClasses.CONTAINER_BORDER);
+    if (this.getBorders().get(Align.alTop)) element.classList.add(CssClasses.CONTAINER_BORDER_TOP);
+    if (this.getBorders().get(Align.alRight)) element.classList.add(CssClasses.CONTAINER_BORDER_RIGHT);
+    if (this.getBorders().get(Align.alBottom)) element.classList.add(CssClasses.CONTAINER_BORDER_BOTTOM);
+    if (this.getBorders().get(Align.alLeft)) element.classList.add(CssClasses.CONTAINER_BORDER_LEFT);
 
     if (this.getOrientation() === Orientation.center) {
       this.children.forEach((child) => {

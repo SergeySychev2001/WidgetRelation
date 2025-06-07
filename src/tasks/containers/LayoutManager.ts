@@ -1,19 +1,95 @@
 import Widget from "../widgets/Widget";
 import ContainerWidget from "./ContainerWidget";
 import { Align, Orientation, CssClasses } from "../enums";
-import { getOrCreate } from "../utils";
+import { Frame } from "../frames";
+import { Header, ToolBar } from "../widgets";
 
 export default class LayoutManager {
-  private widgetRelations: Map<Widget, WidgetRelations> = new Map();
+  private widget: Widget;
+  private widgetRelations: Map<Widget, {
+    parent: ContainerWidget,
+    relations: WidgetRelations
+  }> = new Map();
 
-  constructor() {
+  constructor(widget: Widget) {
+    this.widget = widget;
     this.widgetHighlighter();
   }
 
-  public getWidgetRelations(): Map<Widget, WidgetRelations> {
+  public getWidgetRelations() {
     return this.widgetRelations;
   }
 
+  public updateLayout() {
+    this.clear();
+
+    if (this.widget instanceof Frame) {
+      this.initWidgetRelations(this.widget.getChildren()[0] as ContainerWidget);
+      this.createWidgetRelationsByWidget(this.widget.getChildren()[0]);
+    } else {
+      this.initWidgetRelations(this.widget as ContainerWidget);
+      this.createWidgetRelationsByWidget(this.widget);
+    }
+    this.createBorders();
+  }
+
+  public initWidgetRelations(containerWidget: ContainerWidget) {
+    //TODO Добавить тут проврку на один alClient
+    containerWidget.getChildren().forEach(i => {
+      if (i instanceof ContainerWidget) {
+        this.initWidgetRelations(i);
+      } else {
+        this.widgetRelations.set(i, { parent: containerWidget, relations: new WidgetRelations() })
+      }
+    })
+  }
+
+  // // Создание границ
+  public createBorders() {
+    for (const [widget] of this.widgetRelations) {
+      if (widget instanceof ToolBar) {
+        this.createBorderForToolBar(widget);
+      } else if (widget instanceof Header) {
+        this.createBorderForHeader(widget);
+      }
+    }
+  }
+
+  private createBorderForToolBar(toolbar: ToolBar) {
+    if (toolbar.getOrientation() === Orientation.vertical) {
+      const findedWidgetRelations = this.widgetRelations.get(toolbar);
+      if (findedWidgetRelations) {
+        this.checkWidgetIsOnceChildForParent(toolbar);
+        if (findedWidgetRelations.relations.getLeftRelations().length) {
+          findedWidgetRelations.parent.getBorders().set(Align.alLeft, true);
+        }
+        if (findedWidgetRelations.relations.getRightRelations().length) {
+          findedWidgetRelations.parent.getBorders().set(Align.alRight, true);
+        }
+      }
+    }
+  }
+
+  private createBorderForHeader(header: Header) {
+    const findedWidgetRelations = this.widgetRelations.get(header);
+    if (findedWidgetRelations) {
+      this.checkWidgetIsOnceChildForParent(header);
+      if (findedWidgetRelations.relations.getTopRelations().length) {
+        findedWidgetRelations.parent.getBorders().set(Align.alTop, true);
+      }
+      if (findedWidgetRelations.relations.getBottomRelations().length) {
+        findedWidgetRelations.parent.getBorders().set(Align.alBottom, true);
+      }
+    }
+  }
+
+  public checkWidgetIsOnceChildForParent(widget: Widget) {
+    if (this.widgetRelations.get(widget)!.parent.getChildren().length > 1) {
+      throw new Error("checkWidgetIsOnceChildForParent: More 1 child");
+    }
+  }
+
+  // Создание связей
   public createWidgetRelationsByWidget(widget: Widget): void {
     if (
       widget instanceof ContainerWidget &&
@@ -150,18 +226,14 @@ export default class LayoutManager {
       topOrLeftNeighbours.forEach((a) => {
         bottomOrRightNeighbours.forEach((b) => {
           if (orientation === Orientation.vertical) {
-            getOrCreate(this.widgetRelations, a, () => new WidgetRelations())
-              .getBottomRelations()
+            this.widgetRelations.get(a)?.relations.getBottomRelations()
               .push(b);
-            getOrCreate(this.widgetRelations, b, () => new WidgetRelations())
-              .getTopRelations()
+            this.widgetRelations.get(b)?.relations.getTopRelations()
               .push(a);
           } else {
-            getOrCreate(this.widgetRelations, a, () => new WidgetRelations())
-              .getRightRelations()
+            this.widgetRelations.get(a)?.relations.getRightRelations()
               .push(b);
-            getOrCreate(this.widgetRelations, b, () => new WidgetRelations())
-              .getLeftRelations()
+            this.widgetRelations.get(b)?.relations.getLeftRelations()
               .push(a);
           }
         });
@@ -170,6 +242,9 @@ export default class LayoutManager {
   }
 
   public clear() {
+    for (const [_, meta] of this.widgetRelations) {
+      meta.parent.initBorders();
+    }
     this.widgetRelations.clear();
   }
 
@@ -194,28 +269,28 @@ export default class LayoutManager {
         const widget = getWidgetFromWidgetRelations(target.id);
         if (widget) {
           this.widgetRelations
-            .get(widget)
+            .get(widget)?.relations
             ?.getTopRelations()
             .forEach((i) => {
               const el = document.getElementById(i.getIndex().toString());
               if (el) secondaryElems.push(el as HTMLElement);
             });
           this.widgetRelations
-            .get(widget)
+            .get(widget)?.relations
             ?.getRightRelations()
             .forEach((i) => {
               const el = document.getElementById(i.getIndex().toString());
               if (el) secondaryElems.push(el as HTMLElement);
             });
           this.widgetRelations
-            .get(widget)
+            .get(widget)?.relations
             ?.getBottomRelations()
             .forEach((i) => {
               const el = document.getElementById(i.getIndex().toString());
               if (el) secondaryElems.push(el as HTMLElement);
             });
           this.widgetRelations
-            .get(widget)
+            .get(widget)?.relations
             ?.getLeftRelations()
             .forEach((i) => {
               const el = document.getElementById(i.getIndex().toString());

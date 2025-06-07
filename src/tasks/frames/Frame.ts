@@ -13,7 +13,7 @@ export default class Frame extends Widget {
   ) {
     super(align, displayable);
     this.children = children;
-    this.layoutManager = new LayoutManager();
+    this.layoutManager = new LayoutManager(this);
   }
 
   public getChildren() {
@@ -22,11 +22,6 @@ export default class Frame extends Widget {
 
   public getLayoutManager() {
     return this.layoutManager;
-  }
-
-  public updateLayout() {
-    this.layoutManager.clear();
-    this.layoutManager.createWidgetRelationsByWidget(this.children[0]);
   }
 
   protected getOrientation(): Orientation {
