@@ -1,4 +1,4 @@
-import { Align, ContainerOrientation } from "../enums";
+import { Align, Orientation } from "../enums";
 import Widget from "../widgets/Widget";
 
 /**
@@ -19,7 +19,7 @@ export default abstract class ContainerWidget extends Widget {
     return this.children;
   }
 
-  public abstract getOrientation(): ContainerOrientation;
+  public abstract getOrientation(): Orientation;
 
   /**
    * Creates DOM element for this container according to its orientation.
@@ -28,7 +28,7 @@ export default abstract class ContainerWidget extends Widget {
     const element = document.createElement("div");
     element.classList.add(...cssClass, this.getAlign());
 
-    if (this.getOrientation() === ContainerOrientation.center) {
+    if (this.getOrientation() === Orientation.center) {
       this.children.forEach((child) => {
         if (element.firstChild) {
           throw new Error("More 1 element");
@@ -39,7 +39,7 @@ export default abstract class ContainerWidget extends Widget {
     }
 
     const [start, end] =
-      this.getOrientation() === ContainerOrientation.vertical
+      this.getOrientation() === Orientation.vertical
         ? [Align.alTop, Align.alBottom]
         : [Align.alLeft, Align.alRight];
 
@@ -78,13 +78,13 @@ export default abstract class ContainerWidget extends Widget {
 
   /** Sort widgets by the given orientation. */
   public static sortWidgetsByOrientation(container: ContainerWidget): Widget[] {
-    if (container.getOrientation() === ContainerOrientation.center) {
+    if (container.getOrientation() === Orientation.center) {
       return container.getChildren().filter(i => i.isDisplayable());
     }
 
     // Определяем порядок сортировки в зависимости от ориентации
     const order =
-      container.getOrientation() === ContainerOrientation.vertical
+      container.getOrientation() === Orientation.vertical
         ? [Align.alTop, Align.alClient, Align.alBottom]
         : [Align.alLeft, Align.alClient, Align.alRight];
 

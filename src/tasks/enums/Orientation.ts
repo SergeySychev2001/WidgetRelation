@@ -1,7 +1,7 @@
-enum ContainerOrientation {
+enum Orientation {
     center = "center",
     vertical = "vertical",
     horizontal = "horizontal"
 }
 
-export default ContainerOrientation;
+export default Orientation;

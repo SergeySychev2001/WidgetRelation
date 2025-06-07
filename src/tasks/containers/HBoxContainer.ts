@@ -1,11 +1,11 @@
 import CssClasses from "../enums/CssClasses";
 import ContainerWidget from "./ContainerWidget";
-import { ContainerOrientation } from "../enums";
+import { Orientation } from "../enums";
 
 /** Horizontal container widget. */
 export default class HBoxContainer extends ContainerWidget {
-  public getOrientation(): ContainerOrientation {
-    return ContainerOrientation.horizontal;
+  public getOrientation(): Orientation {
+    return Orientation.horizontal;
   }
 
   public createDOM(): HTMLDivElement {

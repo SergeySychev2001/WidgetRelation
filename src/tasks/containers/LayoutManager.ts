@@ -1,6 +1,6 @@
 import Widget from "../widgets/Widget";
 import ContainerWidget from "./ContainerWidget";
-import { Align, ContainerOrientation, CssClasses } from "../enums";
+import { Align, Orientation, CssClasses } from "../enums";
 import { getOrCreate } from "../utils";
 
 export default class LayoutManager {
@@ -17,7 +17,7 @@ export default class LayoutManager {
   public createWidgetRelationsByWidget(widget: Widget): void {
     if (
       widget instanceof ContainerWidget &&
-      widget.getOrientation() !== ContainerOrientation.center
+      widget.getOrientation() !== Orientation.center
     ) {
       const sortedChildren = ContainerWidget.sortWidgetsByOrientation(widget);
       sortedChildren.forEach((child, idx) => {
@@ -38,7 +38,7 @@ export default class LayoutManager {
       return [widget];
     }
 
-    if (widget.getOrientation() === ContainerOrientation.center) {
+    if (widget.getOrientation() === Orientation.center) {
       return widget.getChildren()[0]
         ? this.findEdgesWidgets(widget.getChildren()[0], align)
         : [];
@@ -129,27 +129,27 @@ export default class LayoutManager {
   private createRelationsBetweenNeighbours(
     widget: Widget,
     nextWidget: Widget,
-    orientation: ContainerOrientation
+    orientation: Orientation
   ): void {
-    if (orientation === ContainerOrientation.center) {
+    if (orientation === Orientation.center) {
       throw new Error("Enxpected case");
     }
 
     const topOrLeftNeighbours = this.findEdgesWidgets(
       widget,
-      orientation === ContainerOrientation.vertical
+      orientation === Orientation.vertical
         ? Align.alBottom
         : Align.alRight
     );
     const bottomOrRightNeighbours = this.findEdgesWidgets(
       nextWidget,
-      orientation === ContainerOrientation.vertical ? Align.alTop : Align.alLeft
+      orientation === Orientation.vertical ? Align.alTop : Align.alLeft
     );
 
     if (topOrLeftNeighbours.length && bottomOrRightNeighbours.length) {
       topOrLeftNeighbours.forEach((a) => {
         bottomOrRightNeighbours.forEach((b) => {
-          if (orientation === ContainerOrientation.vertical) {
+          if (orientation === Orientation.vertical) {
             getOrCreate(this.widgetRelations, a, () => new WidgetRelations())
               .getBottomRelations()
               .push(b);

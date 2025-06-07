@@ -1,5 +1,5 @@
 import { LayoutManager } from "../containers";
-import { Align, ContainerOrientation, CssClasses } from "../enums";
+import { Align, Orientation, CssClasses } from "../enums";
 import { Widget } from "../widgets";
 
 export default class Frame extends Widget {
@@ -29,20 +29,20 @@ export default class Frame extends Widget {
     this.layoutManager.createWidgetRelationsByWidget(this.children[0]);
   }
 
-  protected getOrientation(): ContainerOrientation {
-    return ContainerOrientation.center;
+  protected getOrientation(): Orientation {
+    return Orientation.center;
   }
 
   public createDOM(): HTMLDivElement {
     const el = document.createElement("div");
     switch (this.getOrientation()) {
-      case ContainerOrientation.center:
+      case Orientation.center:
         el.classList.add(CssClasses.FRAME);
         break;
-      case ContainerOrientation.vertical:
+      case Orientation.vertical:
         el.classList.add(CssClasses.FRAME_V);
         break;
-      case ContainerOrientation.horizontal:
+      case Orientation.horizontal:
         el.classList.add(CssClasses.FRAME_H);
         break;
       default:
@@ -52,7 +52,7 @@ export default class Frame extends Widget {
       el.classList.add(CssClasses.DISABLED);
     }
 
-    if (this.getOrientation() === ContainerOrientation.center) {
+    if (this.getOrientation() === Orientation.center) {
       this.children.forEach((child) => {
         if (el.firstChild) {
           throw new Error("More 1 element");
@@ -62,7 +62,7 @@ export default class Frame extends Widget {
       return el;
     } else {
       const [start, end] =
-        this.getOrientation() === ContainerOrientation.vertical
+        this.getOrientation() === Orientation.vertical
           ? [Align.alTop, Align.alBottom]
           : [Align.alLeft, Align.alRight];
 

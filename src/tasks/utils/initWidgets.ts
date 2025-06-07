@@ -1,5 +1,5 @@
 import { ContainerWidget, HBoxContainer, VBoxContainer } from "../containers";
-import { Align, ContainerOrientation } from "../enums";
+import { Align, Orientation } from "../enums";
 import { Frame, VFrame } from "../frames";
 import { Widget } from "../widgets";
 
@@ -84,13 +84,13 @@ const initWidgetsFunc = {
       const withClient = containerWidget ? containerWidget.getChildren().find(i => i.getAlign() === Align.alClient) : false;
       let alignArr: Align[] = [];
       switch (containerWidget?.getOrientation()) {
-        case ContainerOrientation.vertical:
+        case Orientation.vertical:
           alignArr = [Align.alTop, Align.alBottom];
           break;
-        case ContainerOrientation.horizontal:
+        case Orientation.horizontal:
           alignArr = [Align.alLeft, Align.alRight]
           break;
-        case ContainerOrientation.center:
+        case Orientation.center:
           alignArr = []
           break;
         default:

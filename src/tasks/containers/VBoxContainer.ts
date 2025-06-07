@@ -1,11 +1,11 @@
 import CssClasses from "../enums/CssClasses";
 import ContainerWidget from "./ContainerWidget";
-import { ContainerOrientation } from "../enums";
+import { Orientation } from "../enums";
 
 /** Vertical container widget. */
 export default class VBoxContainer extends ContainerWidget {
-  public getOrientation(): ContainerOrientation {
-    return ContainerOrientation.vertical;
+  public getOrientation(): Orientation {
+    return Orientation.vertical;
   }
 
   public createDOM(): HTMLDivElement {

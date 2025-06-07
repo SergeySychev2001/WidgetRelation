@@ -1,9 +1,9 @@
 import Align from './Align';
 import CssClasses from './CssClasses';
-import ContainerOrientation from './ContainerOrientation';
+import Orientation from './Orientation';
 
 export {
     Align,
     CssClasses,
-    ContainerOrientation
+    Orientation
 }

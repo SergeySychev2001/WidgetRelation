@@ -1,8 +1,8 @@
-import { ContainerOrientation } from "../enums";
+import { Orientation } from "../enums";
 import Frame from "./Frame";
 
 export default class HFrame extends Frame {
-  protected getOrientation(): ContainerOrientation {
-    return ContainerOrientation.horizontal;
+  protected getOrientation(): Orientation {
+    return Orientation.horizontal;
   }
 }
