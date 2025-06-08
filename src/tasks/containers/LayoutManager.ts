@@ -6,10 +6,13 @@ import { Header, ToolBar } from "../widgets";
 
 export default class LayoutManager {
   private widget: Widget;
-  private widgetRelations: Map<Widget, {
-    parent: ContainerWidget,
-    relations: WidgetRelations
-  }> = new Map();
+  private widgetRelations: Map<
+    Widget,
+    {
+      parent: ContainerWidget;
+      relations: WidgetRelations;
+    }
+  > = new Map();
 
   constructor(widget: Widget) {
     this.widget = widget;
@@ -31,20 +34,121 @@ export default class LayoutManager {
       this.createWidgetRelationsByWidget(this.widget);
     }
     this.createBorders();
+    this.createSpacing();
   }
 
   public initWidgetRelations(containerWidget: ContainerWidget) {
     //TODO Добавить тут проврку на один alClient
-    containerWidget.getChildren().forEach(i => {
+    containerWidget.getChildren().forEach((i) => {
       if (i instanceof ContainerWidget) {
         this.initWidgetRelations(i);
       } else {
-        this.widgetRelations.set(i, { parent: containerWidget, relations: new WidgetRelations() })
+        this.widgetRelations.set(i, {
+          parent: containerWidget,
+          relations: new WidgetRelations(),
+        });
       }
-    })
+    });
   }
 
-  // // Создание границ
+  // Создание отступов
+  public createSpacing() {
+    for (const [widget] of this.widgetRelations) {
+      this.applySpacingForWidgetByAlign(widget, Align.alTop);
+      this.applySpacingForWidgetByAlign(widget, Align.alRight);
+      this.applySpacingForWidgetByAlign(widget, Align.alBottom);
+      this.applySpacingForWidgetByAlign(widget, Align.alLeft);
+    }
+  }
+
+  public applySpacingForWidgetByAlign(widget: Widget, align: Align) {
+    if (
+      !(
+        this.hasBorderByDirection(widget, align) ||
+        this.hasNeighborsByAlign(widget, align)
+      )
+    ) {
+      let maxSpacing = widget.getSpacing().get(align) || 0;
+      const neighbourWidgets = this.widgetRelations
+        .get(widget)
+        ?.relations.getRelationsByAlign(
+          align === Align.alTop
+            ? Align.alBottom
+            : align === Align.alRight
+              ? Align.alLeft
+              : align === Align.alBottom
+                ? Align.alTop
+                : Align.alLeft
+        )!;
+
+      neighbourWidgets.forEach((i) => {
+        const spacingSize =
+          i
+            .getSpacing()
+            .get(
+              align === Align.alTop
+                ? Align.alBottom
+                : align === Align.alRight
+                  ? Align.alLeft
+                  : align === Align.alBottom
+                    ? Align.alTop
+                    : Align.alLeft
+            ) || 0;
+        if (spacingSize > maxSpacing) maxSpacing = spacingSize;
+      });
+      maxSpacing = maxSpacing / 2;
+      widget.getSpacing().set(align, maxSpacing);
+      neighbourWidgets.forEach((i) => {
+        i.getSpacing().set(
+          align === Align.alTop
+            ? Align.alBottom
+            : align === Align.alRight
+              ? Align.alLeft
+              : align === Align.alBottom
+                ? Align.alTop
+                : Align.alLeft,
+          maxSpacing
+        );
+      });
+    }
+  }
+
+  public hasNeighborsByAlign(widget: Widget, align: Align) {
+    const rel = this.widgetRelations.get(widget)?.relations;
+    switch (align) {
+      case Align.alTop:
+        return rel?.getTopRelations().length;
+      case Align.alRight:
+        return rel?.getRightRelations().length;
+      case Align.alBottom:
+        return rel?.getBottomRelations().length;
+      case Align.alLeft:
+        return rel?.getLeftRelations().length;
+      default:
+        return false;
+    }
+  }
+
+  public getSpacingForWidget(widget: Widget) {
+    const spacing = new Map<Align, number>();
+    if (
+      widget instanceof ToolBar &&
+      widget.getOrientation() === Orientation.vertical
+    ) {
+      spacing.set(Align.alTop, 4);
+      spacing.set(Align.alRight, 4);
+      spacing.set(Align.alBottom, 4);
+      spacing.set(Align.alLeft, 4);
+    } else {
+      spacing.set(Align.alTop, 8);
+      spacing.set(Align.alRight, 12);
+      spacing.set(Align.alBottom, 8);
+      spacing.set(Align.alLeft, 12);
+    }
+    return spacing;
+  }
+
+  // Создание границ
   public createBorders() {
     for (const [widget] of this.widgetRelations) {
       if (widget instanceof ToolBar) {
@@ -89,6 +193,12 @@ export default class LayoutManager {
     }
   }
 
+  public hasBorderByDirection(widget: Widget, align: Align) {
+    return (
+      this.widgetRelations.get(widget)!.parent.getBorders().get(align) || false
+    );
+  }
+
   // Создание связей
   public createWidgetRelationsByWidget(widget: Widget): void {
     if (
@@ -98,6 +208,7 @@ export default class LayoutManager {
       const sortedChildren = ContainerWidget.sortWidgetsByOrientation(widget);
       sortedChildren.forEach((child, idx) => {
         this.createWidgetRelationsByWidget(child);
+        child.setSpacing(this.getSpacingForWidget(child));
         if (idx > 0) {
           this.createRelationsBetweenNeighbours(
             sortedChildren[idx - 1],
@@ -149,21 +260,24 @@ export default class LayoutManager {
   }
 
   // Надо найти первый попавшийся виджет по центральной оси
-  private getFirstAlignedWidgetByAlign(sortedChildren: Widget[], align: Align): Widget | null {
+  private getFirstAlignedWidgetByAlign(
+    sortedChildren: Widget[],
+    align: Align
+  ): Widget | null {
     let reverseAlign: Align;
     switch (align) {
       case Align.alTop:
         reverseAlign = Align.alBottom;
-        break
+        break;
       case Align.alRight:
         reverseAlign = Align.alLeft;
-        break
+        break;
       case Align.alBottom:
         reverseAlign = Align.alTop;
-        break
+        break;
       case Align.alLeft:
         reverseAlign = Align.alRight;
-        break
+        break;
     }
     align === Align.alTop
       ? Align.alBottom
@@ -174,8 +288,12 @@ export default class LayoutManager {
           : align === Align.alLeft && Align.alRight;
 
     const aligned = sortedChildren.filter((c) => c.getAlign() === align);
-    const center = sortedChildren.filter((c) => c.getAlign() === Align.alClient);
-    const reversed = sortedChildren.filter((c) => c.getAlign() === reverseAlign);
+    const center = sortedChildren.filter(
+      (c) => c.getAlign() === Align.alClient
+    );
+    const reversed = sortedChildren.filter(
+      (c) => c.getAlign() === reverseAlign
+    );
 
     switch (align) {
       case Align.alTop:
@@ -213,9 +331,7 @@ export default class LayoutManager {
 
     const topOrLeftNeighbours = this.findEdgesWidgets(
       widget,
-      orientation === Orientation.vertical
-        ? Align.alBottom
-        : Align.alRight
+      orientation === Orientation.vertical ? Align.alBottom : Align.alRight
     );
     const bottomOrRightNeighbours = this.findEdgesWidgets(
       nextWidget,
@@ -226,15 +342,11 @@ export default class LayoutManager {
       topOrLeftNeighbours.forEach((a) => {
         bottomOrRightNeighbours.forEach((b) => {
           if (orientation === Orientation.vertical) {
-            this.widgetRelations.get(a)?.relations.getBottomRelations()
-              .push(b);
-            this.widgetRelations.get(b)?.relations.getTopRelations()
-              .push(a);
+            this.widgetRelations.get(a)?.relations.getBottomRelations().push(b);
+            this.widgetRelations.get(b)?.relations.getTopRelations().push(a);
           } else {
-            this.widgetRelations.get(a)?.relations.getRightRelations()
-              .push(b);
-            this.widgetRelations.get(b)?.relations.getLeftRelations()
-              .push(a);
+            this.widgetRelations.get(a)?.relations.getRightRelations().push(b);
+            this.widgetRelations.get(b)?.relations.getLeftRelations().push(a);
           }
         });
       });
@@ -269,29 +381,29 @@ export default class LayoutManager {
         const widget = getWidgetFromWidgetRelations(target.id);
         if (widget) {
           this.widgetRelations
-            .get(widget)?.relations
-            ?.getTopRelations()
+            .get(widget)
+            ?.relations?.getTopRelations()
             .forEach((i) => {
               const el = document.getElementById(i.getIndex().toString());
               if (el) secondaryElems.push(el as HTMLElement);
             });
           this.widgetRelations
-            .get(widget)?.relations
-            ?.getRightRelations()
+            .get(widget)
+            ?.relations?.getRightRelations()
             .forEach((i) => {
               const el = document.getElementById(i.getIndex().toString());
               if (el) secondaryElems.push(el as HTMLElement);
             });
           this.widgetRelations
-            .get(widget)?.relations
-            ?.getBottomRelations()
+            .get(widget)
+            ?.relations?.getBottomRelations()
             .forEach((i) => {
               const el = document.getElementById(i.getIndex().toString());
               if (el) secondaryElems.push(el as HTMLElement);
             });
           this.widgetRelations
-            .get(widget)?.relations
-            ?.getLeftRelations()
+            .get(widget)
+            ?.relations?.getLeftRelations()
             .forEach((i) => {
               const el = document.getElementById(i.getIndex().toString());
               if (el) secondaryElems.push(el as HTMLElement);
@@ -339,5 +451,20 @@ class WidgetRelations {
 
   public getLeftRelations(): Widget[] {
     return this.leftRelations;
+  }
+
+  public getRelationsByAlign(align: Align) {
+    switch (align) {
+      case Align.alTop:
+        return this.getTopRelations();
+      case Align.alRight:
+        return this.getRightRelations();
+      case Align.alBottom:
+        return this.getBottomRelations();
+      case Align.alLeft:
+        return this.getLeftRelations();
+      default:
+        return [];
+    }
   }
 }
